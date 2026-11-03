@@ -1,7 +1,6 @@
 import Foundation
 import WebKit
 import CoreMIDI
-import CoreAudioKit
 import MediaPlayer
 import AuthenticationServices
 #if os(iOS)
@@ -29,11 +28,6 @@ final class NativeBridge: NSObject, ObservableObject {
     private var lastDeviceIDs = Set<String>()
 
     // Bluetooth search started from the page ("Find my piano")
-    private var bleSearching = false
-    private var bleKnownBefore = Set<String>()
-    #if os(macOS)
-    private var bleWindow: CABTLEMIDIWindowController?
-    #endif
 
     override init() {
         super.init()
@@ -133,9 +127,9 @@ final class NativeBridge: NSObject, ObservableObject {
             let bytes = s(1).split(separator: ",").compactMap { UInt8($0.trimmingCharacters(in: .whitespaces)) }
             send(to: s(0), bytes: bytes)
         case "bleFind":
-            startBluetoothSearch()
+            ble.find(filter: s(0), showAll: b(1))
         case "bleConnect":
-            reconnect(id: s(0))
+            if s(0).hasPrefix("ble-") { ble.reconnect(id: s(0)) } else { reconnectCoreMIDI(id: s(0)) }
         case "media":
             updateNowPlaying(playing: b(0), title: s(1), subtitle: s(2))
         case "openExternal":
@@ -233,7 +227,12 @@ final class NativeBridge: NSObject, ObservableObject {
             if byID[id] == nil { byID[id] = Dev(id: id, name: displayName(e), input: false, output: true); order.append(id) }
             else { byID[id]?.output = true }
         }
-        return order.compactMap { byID[$0] }
+        var list = order.compactMap { byID[$0] }
+        // Bluetooth pianos connected by this app
+        for d in ble.devices where !list.contains(where: { $0.id == d.id }) {
+            list.append(Dev(id: d.id, name: d.name, input: true, output: true))
+        }
+        return list
     }
 
     private func deviceListJSON() -> String {
@@ -266,13 +265,11 @@ final class NativeBridge: NSObject, ObservableObject {
         let devices = currentDevices()
         let ids = Set(devices.map { $0.id })
         pushDeviceList()
-        if bleSearching, let new = devices.first(where: { !bleKnownBefore.contains($0.id) }) {
-            finishBluetoothSearch(found: new)
-        }
         lastDeviceIDs = ids
     }
 
     private func send(to id: String, bytes: [UInt8]) {
+        if id.hasPrefix("ble-") { ble.send(id: id, bytes: bytes); return }
         guard midiReady, !bytes.isEmpty else { return }
         for i in 0..<MIDIGetNumberOfDestinations() {
             let dest = MIDIGetDestination(i)
@@ -287,33 +284,25 @@ final class NativeBridge: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Bluetooth MIDI
+    // MARK: - Bluetooth MIDI (CoreBluetooth; see BluetoothMIDI.swift)
 
-    private func startBluetoothSearch() {
-        bleKnownBefore = Set(currentDevices().map { $0.id })
-        bleSearching = true
-        js("window.__scBle && window.__scBle('connecting', '', '')")
-        DispatchQueue.main.async { self.showBluetoothPicker() }
-    }
-
-    private func finishBluetoothSearch(found dev: Dev) {
-        bleSearching = false
-        js("window.__scBle && window.__scBle('connected', \(NativeBridge.jsString(dev.name)), \(NativeBridge.jsString(dev.id)))")
-    }
-
-    /// The pairing screen was closed: report what happened.
-    private func bluetoothPickerClosed() {
-        guard bleSearching else { return }
-        bleSearching = false
-        if let dev = currentDevices().first {
-            js("window.__scBle && window.__scBle('connected', \(NativeBridge.jsString(dev.name)), \(NativeBridge.jsString(dev.id)))")
-        } else {
-            js("window.__scBle && window.__scBle('none', '', '')")
+    private lazy var ble: BluetoothMIDI = {
+        let b = BluetoothMIDI()
+        b.onStatus = { [weak self] state, name, id in
+            self?.js("window.__scBle && window.__scBle(\(NativeBridge.jsString(state)), \(NativeBridge.jsString(name)), \(NativeBridge.jsString(id)))")
         }
-    }
+        b.onMIDI = { [weak self] id, bytes in
+            let arr = bytes.map(String.init).joined(separator: ",")
+            self?.js("window.__scMidi && window.__scMidi(\(NativeBridge.jsString(id)), [\(arr)])")
+        }
+        b.onDevicesChanged = { [weak self] in self?.pushDeviceList() }
+        b.choose = { [weak self] list, done in self?.chooseDevice(list, done) }
+        return b
+    }()
 
-    private func reconnect(id: String) {
-        if let dev = currentDevices().first(where: { $0.id == id }) ?? currentDevices().first {
+    /// A USB/network MIDI piano already known to CoreMIDI, used when the page asks to reconnect to a non-Bluetooth id.
+    private func reconnectCoreMIDI(id: String) {
+        if let dev = currentDevices().first(where: { $0.id == id }) {
             js("window.__scBle && window.__scBle('connected', \(NativeBridge.jsString(dev.name)), \(NativeBridge.jsString(dev.id)))")
         } else {
             js("window.__scBle && window.__scBle('quiet-fail', '', '')")
@@ -323,29 +312,37 @@ final class NativeBridge: NSObject, ObservableObject {
     #if os(iOS)
     private func topController() -> UIViewController? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        var top = scenes.flatMap { $0.windows }.first { $0.isKeyWindow }?.rootViewController
+        let windows = scenes.sorted { a, _ in a.activationState == .foregroundActive }.flatMap { $0.windows }
+        let window = windows.first { $0.isKeyWindow } ?? scenes.compactMap { $0.keyWindow }.first
+            ?? webView?.window ?? windows.first { !$0.isHidden }
+        var top = window?.rootViewController
         while let p = top?.presentedViewController { top = p }
         return top
     }
 
-    private func showBluetoothPicker() {
-        let picker = CABTMIDICentralViewController()
-        picker.title = "Connect your piano"
-        picker.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak self] _ in
-            self?.topController()?.dismiss(animated: true) { self?.bluetoothPickerClosed() }
-        })
-        let nav = UINavigationController(rootViewController: picker)
-        nav.presentationController?.delegate = self
-        topController()?.present(nav, animated: true)
+    private func chooseDevice(_ list: [(name: String, id: UUID)], _ done: @escaping (UUID?) -> Void) {
+        guard let top = topController() else { return done(nil) }
+        let sheet = UIAlertController(title: "Choose your piano", message: nil, preferredStyle: .actionSheet)
+        for item in list {
+            sheet.addAction(UIAlertAction(title: item.name, style: .default) { _ in done(item.id) })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in done(nil) })
+        if let pop = sheet.popoverPresentationController, let v = webView {
+            pop.sourceView = v
+            pop.sourceRect = CGRect(x: v.bounds.midX, y: v.bounds.midY, width: 1, height: 1)
+        }
+        top.present(sheet, animated: true)
     }
     #else
-    private func showBluetoothPicker() {
-        let wc = CABTLEMIDIWindowController()
-        bleWindow = wc
-        wc.showWindow(nil)
-        wc.window?.title = "Connect your piano"
-        wc.window?.delegate = self
-        NSApp.activate(ignoringOtherApps: true)
+    private func chooseDevice(_ list: [(name: String, id: UUID)], _ done: @escaping (UUID?) -> Void) {
+        let alert = NSAlert()
+        alert.messageText = "Choose your piano"
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 280, height: 26))
+        popup.addItems(withTitles: list.map { $0.name })
+        alert.accessoryView = popup
+        alert.addButton(withTitle: "Connect")
+        alert.addButton(withTitle: "Cancel")
+        done(alert.runModal() == .alertFirstButtonReturn ? list[popup.indexOfSelectedItem].id : nil)
     }
     #endif
 
@@ -563,22 +560,6 @@ extension NativeBridge: ASWebAuthenticationPresentationContextProviding {
         #endif
     }
 }
-
-#if os(iOS)
-extension NativeBridge: UIAdaptivePresentationControllerDelegate {
-    // the pairing screen was swiped away
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        bluetoothPickerClosed()
-    }
-}
-#else
-extension NativeBridge: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
-        bleWindow = nil
-        bluetoothPickerClosed()
-    }
-}
-#endif
 
 /// Avoids a retain cycle between the web view's content controller and the bridge.
 private final class WeakScriptHandler: NSObject, WKScriptMessageHandler {

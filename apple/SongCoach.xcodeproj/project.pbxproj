@@ -10,6 +10,7 @@
 		A10000000000000000000001 /* SongCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* SongCoachApp.swift */; };
 		A10000000000000000000002 /* SongCoachWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* SongCoachWebView.swift */; };
 		A10000000000000000000003 /* NativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* NativeBridge.swift */; };
+		A10000000000000000000005 /* BluetoothMIDI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* BluetoothMIDI.swift */; };
 		A10000000000000000000004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -17,6 +18,7 @@
 		A20000000000000000000001 /* SongCoachApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongCoachApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* SongCoachWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongCoachWebView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* NativeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeBridge.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* BluetoothMIDI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothMIDI.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000010 /* Song Coach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Song Coach.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -47,6 +49,7 @@
 				A20000000000000000000001 /* SongCoachApp.swift */,
 				A20000000000000000000002 /* SongCoachWebView.swift */,
 				A20000000000000000000003 /* NativeBridge.swift */,
+				A20000000000000000000006 /* BluetoothMIDI.swift */,
 				A20000000000000000000004 /* Assets.xcassets */,
 				A20000000000000000000005 /* Info.plist */,
 			);
@@ -133,6 +136,7 @@
 				A10000000000000000000001 /* SongCoachApp.swift in Sources */,
 				A10000000000000000000002 /* SongCoachWebView.swift in Sources */,
 				A10000000000000000000003 /* NativeBridge.swift in Sources */,
+				A10000000000000000000005 /* BluetoothMIDI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -185,7 +189,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 7759DUGRHU;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -219,7 +223,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 7759DUGRHU;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
