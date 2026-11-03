@@ -6,6 +6,12 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Song Coach uses Bluetooth to connect to your piano.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Song Coach uses Bluetooth to connect to your piano.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Song Coach listens through the microphone for the tuner, singing and when you play an acoustic instrument.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
