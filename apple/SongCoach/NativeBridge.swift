@@ -3,6 +3,7 @@ import WebKit
 import CoreMIDI
 import CoreAudioKit
 import MediaPlayer
+import AuthenticationServices
 #if os(iOS)
 import UIKit
 import AVFoundation
@@ -138,7 +139,8 @@ final class NativeBridge: NSObject, ObservableObject {
         case "media":
             updateNowPlaying(playing: b(0), title: s(1), subtitle: s(2))
         case "openExternal":
-            if let url = URL(string: s(0)) { openURL(url) }
+            guard let url = URL(string: s(0)) else { break }
+            if url.query?.contains("applogin") == true { startGoogleLogin(url) } else { openURL(url) }
         case "saveFile":
             saveFile(name: s(0), base64: s(2), share: false, text: "")
         case "shareFile":
@@ -360,6 +362,33 @@ final class NativeBridge: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Google sign-in
+    // The site's app sign-in (…?applogin) ends by sending the Google token to an Android-only
+    // "intent://" link. Safari can't open that, so the app runs the sign-in in Apple's own sign-in
+    // sheet and catches that link itself, then hands the token to the page.
+
+    private var authSession: ASWebAuthenticationSession?
+
+    private func startGoogleLogin(_ url: URL) {
+        DispatchQueue.main.async {
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "intent") { [weak self] callback, _ in
+                guard let self else { return }
+                self.authSession = nil
+                guard let callback else { return } // cancelled
+                let text = callback.absoluteString
+                guard let r = text.range(of: "S.token=") else { return }
+                var token = String(text[r.upperBound...])
+                if let end = token.firstIndex(of: ";") { token = String(token[..<end]) }
+                token = token.removingPercentEncoding ?? token
+                self.js("window.__scGoogle && window.__scGoogle(\(NativeBridge.jsString(token)))")
+            }
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = true // no Google account left behind in Safari
+            self.authSession = session
+            session.start()
+        }
+    }
+
     // MARK: - Links, files, sharing
 
     private func openURL(_ url: URL) {
@@ -522,6 +551,17 @@ extension NativeBridge: WKUIDelegate, WKNavigationDelegate {
         completionHandler(panel.runModal() == .OK ? panel.urls : nil)
     }
     #endif
+}
+
+extension NativeBridge: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        #if os(iOS)
+        let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap { $0.windows }
+        return windows.first { $0.isKeyWindow } ?? windows.first ?? ASPresentationAnchor()
+        #else
+        return webView?.window ?? NSApp.keyWindow ?? ASPresentationAnchor()
+        #endif
+    }
 }
 
 #if os(iOS)
