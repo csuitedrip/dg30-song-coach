@@ -14,7 +14,7 @@ import AppKit
 /// the Bluetooth MIDI pairing screen, the microphone, saving/sharing files and "now playing".
 final class NativeBridge: NSObject, ObservableObject {
 
-    static let siteURL = URL(string: "https://kerrymelchior-ux.github.io/dg30-song-coach/")!
+    static let siteURL = URL(string: "https://songcoach.csuitedrip.com/")!
 
     private(set) weak var webView: WKWebView?
 
@@ -71,6 +71,12 @@ final class NativeBridge: NSObject, ObservableObject {
     /// Defines window.SCNative before the page's own code runs, matching the Android app's bridge.
     static func shim(initialDevices: String) -> String {
         let initial = initialDevices.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'")
+        let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "1.0"
+        #if os(iOS)
+        let platform = "ios"
+        #else
+        let platform = "macos"
+        #endif
         return """
         (function(){
           if (window.SCNative) return;
@@ -78,7 +84,8 @@ final class NativeBridge: NSObject, ObservableObject {
           window.__scDevList = '\(initial)';
           window.__scSetDevices = function(j){ window.__scDevList = j; };
           window.SCNative = {
-            platform: 'apple',
+            platform: function(){ return '\(platform)'; },
+            version: function(){ return '\(version)'; },
             midiDevices: function(){ return window.__scDevList || '[]'; },
             midiOpenAll: function(){ post('midiOpenAll'); },
             midiSend: function(id, csv){ post('midiSend', [String(id), String(csv)]); },
