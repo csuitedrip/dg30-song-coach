@@ -1,0 +1,4 @@
+{
+  "note": "Newest store version of Song Coach for each platform. The apps compare this with the installed version and offer the update. Update it right after a store release goes live.",
+  "android": { "version": "1.11", "code": 12, "url": "https://play.google.com/store/apps/details?id=com.csuitedrip.songcoach" }
+}
