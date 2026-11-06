@@ -188,8 +188,8 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7759DUGRHU;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = 2D76B6JNQ8;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -205,7 +205,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.11;
-				PRODUCT_BUNDLE_IDENTIFIER = com.csuitedrip.songcoach;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csuitedrip.songcoach.ios;
 				PRODUCT_NAME = "Song Coach";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
@@ -222,8 +222,8 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7759DUGRHU;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = 2D76B6JNQ8;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -239,7 +239,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.11;
-				PRODUCT_BUNDLE_IDENTIFIER = com.csuitedrip.songcoach;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csuitedrip.songcoach.ios;
 				PRODUCT_NAME = "Song Coach";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
